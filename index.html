@@ -114,5 +114,41 @@
 
         let game = setInterval(draw, 100);
     </script>
+ <h2>System and Browser Information</h2>
+    <table id="infoTable">
+        <tr>
+            <th>Property</th>
+            <th>Value</th>
+        </tr>
+        <!-- Information rows will be inserted here by JavaScript -->
+    </table>
+    <button onclick="window.print();" class="print-button">Print this page</button>
+
+    <script>
+        function addRow(property, value) {
+            const table = document.getElementById("infoTable");
+            let row = table.insertRow(-1);
+            let cell1 = row.insertCell(0);
+            let cell2 = row.insertCell(1);
+            cell1.innerHTML = property;
+            cell2.innerHTML = value;
+        }
+
+        // Add various information
+        addRow("OS Platform", navigator.platform);
+        addRow("Browser Name", navigator.appName);
+        addRow("Browser Version", navigator.appVersion);
+        addRow("Cookies Enabled", navigator.cookieEnabled ? "Yes" : "No");
+        addRow("JavaScript Enabled", "Yes"); // If this script runs, JS is enabled
+        addRow("Screen Width (px)", screen.width);
+        addRow("Screen Height (px)", screen.height);
+        addRow("Window Inner Width (px)", window.innerWidth);
+        addRow("Window Inner Height (px)", window.innerHeight);
+        addRow("Color Depth", screen.colorDepth);
+        addRow("Pixel Depth", screen.pixelDepth);
+
+        // Add more properties as needed
+    </script>
+    
 </body>
 </html>
