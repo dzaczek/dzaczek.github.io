@@ -38,6 +38,19 @@
             font-size: 20px;
             font-weight: bold;
         }
+            #gameControls {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Adjust the gap between buttons */
+    padding-top: 20px; /* Space above the buttons */
+}
+
+#gameControls button {
+    padding: 10px 20px; /* Adjust the size of the buttons */
+    font-size: 16px; /* Adjust the font size */
+    cursor: pointer; /* Change cursor to pointer when hovering over the buttons */
+}
+
     </style>
 
 </head>
@@ -45,6 +58,31 @@
     <canvas id="gameCanvas" width="1024" height="768"></canvas>
     <div id="underConstruction">Page Under Construction</div>
     <script>
+
+        document.getElementById('moveUp').addEventListener('click', function() {
+    if (d != "DOWN") {
+        d = "UP";
+    }
+});
+
+document.getElementById('moveLeft').addEventListener('click', function() {
+    if (d != "RIGHT") {
+        d = "LEFT";
+    }
+});
+
+document.getElementById('moveDown').addEventListener('click', function() {
+    if (d != "UP") {
+        d = "DOWN";
+    }
+});
+
+document.getElementById('moveRight').addEventListener('click', function() {
+    if (d != "LEFT") {
+        d = "RIGHT";
+    }
+});
+
         const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const box = 20;
@@ -147,6 +185,15 @@ function draw() {
 
 let game = setInterval(draw, 100);
     </script>
+
+<div id="gameControls">
+    <button id="moveUp">Up</button>
+    <button id="moveLeft">Left</button>
+    <button id="moveDown">Down</button>
+    <button id="moveRight">Right</button>
+</div>
+
+    
  <h2>System and Browser Information</h2>
     <table id="infoTable">
         <tr>
