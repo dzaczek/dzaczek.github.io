@@ -21,9 +21,8 @@
             font-weight: bold;
         }
     </style>
-
-
-      <script>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
         var font = (function () {
             var test_string = 'mmmmmmmmmwwwwwww';
             var test_font = '"Comic Sans MS"';
@@ -64,8 +63,7 @@
                 $("body").append("<p>" + fontName + " is " + isInstalled + ".</p>");
             });
         });
-    </script>
-    
+    </script>    
 </head>
 <body>
     <canvas id="gameCanvas" width="1024" height="768"></canvas>
