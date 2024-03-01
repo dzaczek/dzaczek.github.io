@@ -3,13 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Error 418</title>
-    <style>
+        <style>
+         
+        
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+            
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             flex-direction: column;
+               font-family: Arial, sans-serif;
+            padding: 20px;
         }
         canvas {
             background-color: #f0f0f0;
@@ -21,49 +39,7 @@
             font-weight: bold;
         }
     </style>
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
-        var font = (function () {
-            var test_string = 'mmmmmmmmmwwwwwww';
-            var test_font = '"Comic Sans MS"';
-            var notInstalledWidth = 0;
-            var testbed = null;
-            var guid = 0;
 
-            return {
-                setup : function () {
-                    if ($('#fontInstalledTest').length) return;
-
-                    $('head').append('<style> #fontInstalledTest, #fontTestBed { position: absolute; left: -9999px; top: 0; visibility: hidden; } #fontInstalledTest { font-size: 50px!important; font-family: ' + test_font + ';}</style>');
-
-                    $('body').append('<div id="fontTestBed"></div>').append('<span id="fontInstalledTest" class="fonttest">' + test_string + '</span>');
-                    testbed = $('#fontTestBed');
-                    notInstalledWidth = $('#fontInstalledTest').width();
-                },
-
-                isInstalled : function(font) {
-                    guid++;
-
-                    var style = '<style id="fonttestStyle"> #fonttest' + guid + ' { font-size: 50px!important; font-family: ' + font + ', ' + test_font + '; } </style>';
-
-                    $('head').find('#fonttestStyle').remove().end().append(style);
-                    testbed.empty().append('<span id="fonttest' + guid + '" class="fonttest">' + test_string + '</span>');
-
-                    return (testbed.find('span').width() != notInstalledWidth);
-                }
-            };
-        })();
-        
-        $(document).ready(function() {
-            font.setup();
-            
-            var fonts = ["Arial", "Verdana", "Times New Roman", "Courier New"];
-            fonts.forEach(function(fontName) {
-                var isInstalled = font.isInstalled(fontName) ? "installed" : "not installed";
-                $("body").append("<p>" + fontName + " is " + isInstalled + ".</p>");
-            });
-        });
-    </script>    
 </head>
 <body>
     <canvas id="gameCanvas" width="1024" height="768"></canvas>
@@ -165,9 +141,31 @@
         </tr>
         <!-- Information rows will be inserted here by JavaScript -->
     </table>
-    <button onclick="window.print();" class="print-button">Print this page</button>
 
     <script>
+        // Plugin system for extending functionality
+        const regular_plugins = {
+            JS_FONTS: function() {
+                // Simplified font check for demonstration. For a full implementation, use the previously discussed method.
+                const fonts = ['Arial', 'Verdana', 'Times New Roman', 'Courier New', 'NotARealFont'];
+                const results = fonts.map(font => {
+                    document.fonts.load('10pt "'+font+'"').then(function(fonts){
+                        if (fonts.length >= 1) {
+                            addRow(font, "Installed");
+                        } else {
+                            addRow(font, "Not Installed");
+                        }
+                    });
+                });
+            },
+            TIMEZONE_OFFSET: function() {
+                const offset = new Date().getTimezoneOffset();
+                const hours = Math.floor(offset / 60);
+                const minutes = offset % 60;
+                addRow("Timezone Offset", `${hours} hour(s) and ${minutes} minute(s)`);
+            }
+        };
+
         function addRow(property, value) {
             const table = document.getElementById("infoTable");
             let row = table.insertRow(-1);
@@ -189,9 +187,12 @@
         addRow("Window Inner Height (px)", window.innerHeight);
         addRow("Color Depth", screen.colorDepth);
         addRow("Pixel Depth", screen.pixelDepth);
+        addRow("Language", navigator.language || navigator.userLanguage);
 
-        // Add more properties as needed
+        // Execute plugins
+        Object.keys(regular_plugins).forEach(function(pluginKey) {
+            regular_plugins[pluginKey]();
+        });
     </script>
-    
 </body>
 </html>
