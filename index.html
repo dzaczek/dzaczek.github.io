@@ -21,6 +21,51 @@
             font-weight: bold;
         }
     </style>
+
+
+      <script>
+        var font = (function () {
+            var test_string = 'mmmmmmmmmwwwwwww';
+            var test_font = '"Comic Sans MS"';
+            var notInstalledWidth = 0;
+            var testbed = null;
+            var guid = 0;
+
+            return {
+                setup : function () {
+                    if ($('#fontInstalledTest').length) return;
+
+                    $('head').append('<style> #fontInstalledTest, #fontTestBed { position: absolute; left: -9999px; top: 0; visibility: hidden; } #fontInstalledTest { font-size: 50px!important; font-family: ' + test_font + ';}</style>');
+
+                    $('body').append('<div id="fontTestBed"></div>').append('<span id="fontInstalledTest" class="fonttest">' + test_string + '</span>');
+                    testbed = $('#fontTestBed');
+                    notInstalledWidth = $('#fontInstalledTest').width();
+                },
+
+                isInstalled : function(font) {
+                    guid++;
+
+                    var style = '<style id="fonttestStyle"> #fonttest' + guid + ' { font-size: 50px!important; font-family: ' + font + ', ' + test_font + '; } </style>';
+
+                    $('head').find('#fonttestStyle').remove().end().append(style);
+                    testbed.empty().append('<span id="fonttest' + guid + '" class="fonttest">' + test_string + '</span>');
+
+                    return (testbed.find('span').width() != notInstalledWidth);
+                }
+            };
+        })();
+        
+        $(document).ready(function() {
+            font.setup();
+            
+            var fonts = ["Arial", "Verdana", "Times New Roman", "Courier New"];
+            fonts.forEach(function(fontName) {
+                var isInstalled = font.isInstalled(fontName) ? "installed" : "not installed";
+                $("body").append("<p>" + fontName + " is " + isInstalled + ".</p>");
+            });
+        });
+    </script>
+    
 </head>
 <body>
     <canvas id="gameCanvas" width="1024" height="768"></canvas>
