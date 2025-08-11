@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Error 418</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root { --card:#ffffff; --ink:#111; --muted:#666; --line:#ddd; --bg:#fafafa; }
+    @media (prefers-color-scheme: dark) {
+      :root { --card:#161616; --ink:#f2f2f2; --muted:#aaa; --line:#2a2a2a; --bg:#0e0e0e; }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+    h1, h2 { margin: 0 0 .5rem 0; }
+    .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+    @media (max-width: 1100px) { .wrap { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+    .muted { color: var(--muted); font-size: .9rem; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap: wrap; }
+
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border-bottom: 1px solid var(--line); text-align: left; padding: 8px; vertical-align: top; }
+    th { position: sticky; top: 0; background: var(--card); z-index: 1; }
+    tr:nth-child(even) td { background: color-mix(in srgb, var(--card), var(--ink) 3%); }
+    code.k { white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9rem; }
+
+    /* Snake */
+    #gameCanvas { width: 100%; height: auto; background: #f0f0f0; border: 1px solid var(--line); border-radius: 8px; }
+    #gameControls { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; }
+    #gameControls button { padding: 8px 14px; font-size: 15px; cursor: pointer; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+
+    /* Consent */
+    #consentBar {
+      position: fixed; inset: auto 12px 12px 12px; z-index: 9999;
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 6px 30px rgba(0,0,0,.12);
+    }
+    #consentBar .spacer { flex: 1; }
+    .btn { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); cursor: pointer; background: var(--card); color: var(--ink); }
+    .btn.primary { background: #0b5cff; color: #fff; border-color: #0b5cff; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Left: Game -->
+    <section class="card">
+      <h2>Snake: Systemd vs. the Classics 🐍</h2>
+      <canvas id="gameCanvas" width="1024" height="768"></canvas>
+      <div id="gameControls">
+        <button id="moveUp">Up</button>
+        <button id="moveLeft">Left</button>
+        <button id="moveDown">Down</button>
+        <button id="moveRight">Right</button>
+        <span class="muted">Arrow keys also work.</span>
+      </div>
+      <div class="muted" style="padding-top:8px">Page Under Construction</div>
+    </section>
+
+    <!-- Right: Info -->
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>System & Browser Information</h2>
+        <div class="muted" id="consentState">(collecting basic, non-sensitive data)</div>
+      </div>
+      <div class="grid2">
+        <div>
+          <table id="infoTable">
+            <thead>
+              <tr><th>Property</th><th>Value</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div>
+          <h3 style="margin-top:0">Actions</h3>
+          <div class="row">
+            <button class="btn" id="refreshBtn">Refresh</button>
+            <button class="btn" id="geoBtn">Request Geolocation</button>
+            <button class="btn" id="copyBtn">Copy Table as JSON</button>
+            <button class="btn" id="sendBtn">Send to /collect</button>
+          </div>
+          <p class="muted">“Send to /collect” uses <code class="k">navigator.sendBeacon</code> with JSON. Customize the URL on your server.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Consent bar -->
+  <div id="consentBar" hidden>
+    <div>We’d like to collect extra diagnostic signals (GPU, storage, media devices count, etc.) to improve security and analytics.</div>
+    <div class="spacer"></div>
+    <button id="declineBtn" class="btn">Decline</button>
+    <button id="acceptBtn" class="btn primary">Allow</button>
+  </div>
+
+  <script>
+    // ---------- Helpers ----------
+    const $ = sel => document.querySelector(sel);
+    const TBL = $("#infoTable tbody");
+    const rows = {}; // key->value snapshot for export/beacon
+
+    function addRow(property, value) {
+      rows[property] = value;
+      let tr = document.createElement("tr");
+      let td1 = document.createElement("td"); td1.textContent = property;
+      let td2 = document.createElement("td"); td2.textContent = (value === undefined ? "—" : String(value));
+      tr.appendChild(td1); tr.appendChild(td2); TBL.appendChild(tr);
+    }
+    function addRows(obj, prefix = "") {
+      Object.entries(obj || {}).forEach(([k,v]) => addRow(prefix ? `${prefix} ${k}` : k, v));
+    }
+    function clearTable() { TBL.innerHTML = ""; Object.keys(rows).forEach(k=>delete rows[k]); }
+
+    function consentGranted() { return localStorage.getItem("viewer-consent") === "granted"; }
+    function setConsent(granted) { localStorage.setItem("viewer-consent", granted ? "granted" : "denied"); updateConsentUI(); }
+    function updateConsentUI() {
+      const el = $("#consentBar");
+      const state = $("#consentState");
+      const granted = consentGranted();
+      el.hidden = granted || localStorage.getItem("viewer-consent")==="denied";
+      state.textContent = granted ? "(collecting extended signals)" : "(collecting basic, non-sensitive data)";
+    }
+
+    // ---------- Core collectors ----------
+    async function collectBasic() {
+      addRow("IANA Timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+      addRow("Timezone Offset (min)", new Date().getTimezoneOffset());
+      addRow("Languages", navigator.languages?.join(", ") || navigator.language || "unknown");
+      addRow("Cookies Enabled", navigator.cookieEnabled ? "Yes" : "No");
+      addRow("JavaScript Enabled", "Yes");
+      addRow("Screen Width (px)", screen.width);
+      addRow("Screen Height (px)", screen.height);
+      addRow("Window Inner Width (px)", window.innerWidth);
+      addRow("Window Inner Height (px)", window.innerHeight);
+      addRow("Color Depth", screen.colorDepth);
+      addRow("Pixel Depth", screen.pixelDepth);
+      addRow("DPR", window.devicePixelRatio);
+      addRow("Prefers Dark", matchMedia("(prefers-color-scheme: dark)").matches);
+      addRow("Reduced Motion", matchMedia("(prefers-reduced-motion: reduce)").matches);
+      addRow("Referrer", document.referrer || "(none)");
+      addRow("Navigation Type", performance.getEntriesByType?.("navigation")?.[0]?.type || "unknown");
+
+      // Performance timings
+      const nav = performance.getEntriesByType?.("navigation")?.[0];
+      if (nav) {
+        addRow("TTFB (ms)", Math.round(nav.responseStart - nav.requestStart));
+        addRow("DOM Content Loaded (ms)", Math.round(nav.domContentLoadedEventEnd - nav.startTime));
+        addRow("Load Event (ms)", Math.round(nav.loadEventEnd - nav.startTime || 0));
+      }
+
+      // UA-CH (modern)
+      if (navigator.userAgentData?.getHighEntropyValues) {
+        try {
+          const d = await navigator.userAgentData.getHighEntropyValues(
+            ["platform","platformVersion","uaFullVersion","architecture","bitness","model","fullVersionList"]
+          );
+          addRows(d, "UA-CH");
+        } catch { addRow("UA-CH", "unavailable"); }
+      } else {
+        addRow("User-Agent (legacy)", navigator.userAgent);
+        addRow("Browser Name (legacy)", navigator.appName);
+        addRow("Browser Version (legacy)", navigator.appVersion);
+      }
+
+      // Network Info API
+      const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (c) {
+        addRow("Network Type", c.effectiveType);
+        addRow("Downlink (Mbps est.)", c.downlink);
+        addRow("RTT (ms est.)", c.rtt);
+        addRow("Save-Data", c.saveData ? "Yes" : "No");
+      }
+    }
+
+    async function collectExtended() {
+      // Hardware-ish
+      addRow("CPU Threads", navigator.hardwareConcurrency ?? "unknown");
+      addRow("Device Memory (GB)", navigator.deviceMemory ?? "unknown");
+      addRow("Touch Points", navigator.maxTouchPoints ?? 0);
+
+      // Storage estimate
+      if (navigator.storage?.estimate) {
+        try {
+          const e = await navigator.storage.estimate();
+          addRow("Storage Quota (MB)", e.quota ? (e.quota/1024/1024).toFixed(1) : "unknown");
+          addRow("Storage Used (MB)", e.usage ? (e.usage/1024/1024).toFixed(1) : "unknown");
+        } catch {}
+      }
+
+      // Battery (not supported everywhere)
+      if (navigator.getBattery) {
+        try {
+          const b = await navigator.getBattery();
+          addRow("Battery Charging", b.charging);
+          addRow("Battery Level", Math.round(b.level * 100) + "%");
+          addRow("Battery Discharge Time (min)", b.dischargingTime && b.dischargingTime > 0 ? Math.round(b.dischargingTime/60) : "unknown");
+        } catch {}
+      }
+
+      // Media devices count (no mic/cam permission required; labels are hidden)
+      if (navigator.mediaDevices?.enumerateDevices) {
+        try {
+          const ds = await navigator.mediaDevices.enumerateDevices();
+          const byKind = ds.reduce((m,d)=> (m[d.kind]=(m[d.kind]||0)+1,m),{});
+          Object.entries(byKind).forEach(([k,v]) => addRow("Devices: " + k, v));
+        } catch {}
+      }
+
+      // WebGL GPU strings (useful for fingerprinting)
+      try {
+        const gl = document.createElement("canvas").getContext("webgl");
+        const dbg = gl && gl.getExtension("WEBGL_debug_renderer_info");
+        if (gl && dbg) {
+          addRow("GPU Vendor", gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL));
+          addRow("GPU Renderer", gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL));
+        } else {
+          addRow("WebGL", gl ? "available" : "unavailable");
+        }
+      } catch { addRow("WebGL", "blocked"); }
+
+      // Plugins / MimeTypes (mostly legacy, still useful on some browsers)
+      try {
+        addRow("Plugins Count", navigator.plugins?.length ?? 0);
+        addRow("MimeTypes Count", navigator.mimeTypes?.length ?? 0);
+      } catch {}
+
+      // Fonts (very light demo via CSS Font Loading; results not guaranteed)
+      if (document.fonts?.load) {
+        const fonts = ["Arial","Verdana","Times New Roman","Courier New","NotARealFont"];
+        await Promise.all(fonts.map(async f => {
+          try {
+            const loaded = await document.fonts.load('10pt "'+f+'"');
+            addRow(`Font: ${f}`, loaded.length ? "likely installed" : "not detected");
+          } catch { addRow(`Font: ${f}`,"unknown"); }
+        }));
+      }
+
+      // Permissions snapshot (where supported)
+      if (navigator.permissions?.query) {
+        for (const name of ["geolocation","notifications","clipboard-read","clipboard-write","camera","microphone"]) {
+          try {
+            const s = await navigator.permissions.query({name});
+            addRow(`Permission: ${name}`, s.state);
+          } catch {}
+        }
+      }
+    }
+
+    // Geolocation (permissioned)
+    function requestGeolocation() {
+      if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          addRow("Geo Latitude", pos.coords.latitude);
+          addRow("Geo Longitude", pos.coords.longitude);
+          addRow("Geo Accuracy (m)", pos.coords.accuracy);
+          addRow("Geo Timestamp", new Date(pos.timestamp).toISOString());
+        },
+        err => { addRow("Geolocation Error", err.message || String(err.code)); },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    }
+
+    // Export / Beacon
+    function rowsAsJSON() { return JSON.stringify(rows, null, 2); }
+    function copyJSON() {
+      const data = rowsAsJSON();
+      navigator.clipboard?.writeText(data).then(()=>alert("Copied table JSON to clipboard."), ()=>alert("Copy failed."));
+    }
+    function sendBeacon() {
+      try {
+        const payload = new Blob([rowsAsJSON()], { type: "application/json" });
+        const ok = navigator.sendBeacon?.("/collect", payload);
+        alert(ok ? "Sent to /collect (beacon)." : "Beacon not supported or blocked.");
+      } catch { alert("Beacon failed."); }
+    }
+
+    // ---------- Wire UI ----------
+    $("#refreshBtn").addEventListener("click", async () => { clearTable(); await collectBasic(); if (consentGranted()) await collectExtended(); });
+    $("#geoBtn").addEventListener("click", requestGeolocation);
+    $("#copyBtn").addEventListener("click", copyJSON);
+    $("#sendBtn").addEventListener("click", sendBeacon);
+
+    $("#acceptBtn").addEventListener("click", async () => {
+      setConsent(true);
+      clearTable();
+      await collectBasic();
+      await collectExtended();
+    });
+    $("#declineBtn").addEventListener("click", () => setConsent(false));
+
+    // Show consent bar on first visit
+    if (!localStorage.getItem("viewer-consent")) { $("#consentBar").hidden = false; }
+    updateConsentUI();
+
+    // Initial run
+    (async () => {
+      await collectBasic();
+      if (consentGranted()) await collectExtended();
+    })();
+
+    // ---------- Your original Snake game (kept, with tiny tweaks) ----------
+    (function snakeGame(){
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const box = 20;
+      let snake = [{ x: 9*box, y: 10*box }];
+      const words = ["ntp","network","syslog","mount","getty","cron","init"];
+      let food = {
+        x: Math.floor(Math.random()*17+1)*box,
+        y: Math.floor(Math.random()*15+3)*box,
+        word: words[Math.floor(Math.random()*words.length)]
+      };
+      let score = 0;
+      let d;
+
+      document.addEventListener("keydown", (e)=>{
+        const key = e.keyCode;
+        if (key==37 && d!="RIGHT") d="LEFT";
+        else if (key==38 && d!="DOWN") d="UP";
+        else if (key==39 && d!="LEFT") d="RIGHT";
+        else if (key==40 && d!="UP") d="DOWN";
+      });
+
+      function collision(head, array){
+        for (let i=0;i<array.length;i++){
+          if (head.x==array[i].x && head.y==array[i].y) return true;
+        }
+        return false;
+      }
+
+      function draw(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        for (let i=0;i<snake.length;i++){
+          ctx.fillStyle = (i==0) ? "green" : "white";
+          ctx.fillRect(snake[i].x, snake[i].y, box, box);
+          ctx.strokeStyle = "red";
+          ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+        }
+        ctx.fillStyle = "black";
+        ctx.font = "20px Arial";
+        ctx.fillText("SYSTEMD", snake[0].x, snake[0].y - 5);
+        ctx.fillStyle = "red";
+        ctx.fillRect(food.x, food.y, box, box);
+        ctx.fillStyle = "black";
+        ctx.fillText(food.word, food.x, food.y + box);
+
+        let snakeX = snake[0].x;
+        let snakeY = snake[0].y;
+        if (d=="LEFT") snakeX -= box;
+        if (d=="UP") snakeY -= box;
+        if (d=="RIGHT") snakeX += box;
+        if (d=="DOWN") snakeY += box;
+
+        if (snakeX == food.x && snakeY == food.y){
+          score++;
+          food = {
+            x: Math.floor(Math.random()*17+1)*box,
+            y: Math.floor(Math.random()*15+3)*box,
+            word: words[Math.floor(Math.random()*words.length)]
+          };
+        } else { snake.pop(); }
+
+        const newHead = { x: snakeX, y: snakeY };
+        if (snakeX < box || snakeY < 3*box || snakeX >= canvas.width - box || snakeY >= canvas.height - box || collision(newHead, snake)) {
+          clearInterval(game);
+          ctx.fillStyle = "black";
+          ctx.font = "36px Arial";
+          ctx.fillText("Game Over", canvas.width/2 - 90, canvas.height/2);
+        }
+        snake.unshift(newHead);
+
+        ctx.fillStyle = "black";
+        ctx.font = "28px Arial";
+        ctx.fillText("Score: " + score, 2*box, 1.8*box);
+      }
+
+      const game = setInterval(draw, 100);
+
+      document.getElementById('moveUp').addEventListener('click', ()=>{ if (d!="DOWN") d="UP"; });
+      document.getElementById('moveLeft').addEventListener('click', ()=>{ if (d!="RIGHT") d="LEFT"; });
+      document.getElementById('moveDown').addEventListener('click', ()=>{ if (d!="UP") d="DOWN"; });
+      document.getElementById('moveRight').addEventListener('click', ()=>{ if (d!="LEFT") d="RIGHT"; });
+    })();
+  </script>
+</body>
+</html>
