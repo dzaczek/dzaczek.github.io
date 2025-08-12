@@ -1,254 +1,352 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Error 418</title>
-        <style>
-         
-        
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        td, th {
-            border: 1px solid #dddddd;
-            text-align: left;
-            padding: 8px;
-            
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Error 418</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body {
+      display: flex; flex-direction: column; gap: 18px;
+      justify-content: flex-start; align-items: center;
+      min-height: 100vh; padding: 24px;
+    }
+    h1,h2,h3 { margin: 6px 0; }
+    .wrap { width: min(1100px, 100%); }
+    .card {
+      border: 1px solid #ddd; border-radius: 12px; padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      background: #fff;
+    }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .row > * { flex: 1 1 320px; }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-               font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        canvas {
-            background-color: #f0f0f0;
-            border: 1px solid black;
-        }
-        underConstruction {
-            margin-top: 20px;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        #gameControls {
-    display: flex;
-    justify-content: center;
-    gap: 10px; /* Adjust the gap between buttons */
-    padding-top: 20px; /* Space above the buttons */
-}
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border: 1px solid #ddd; text-align: left; padding: 8px; vertical-align: top; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    code,kbd { background: #f2f2f2; border-radius: 6px; padding: 2px 6px; }
 
-#gameControls button {
-    padding: 10px 20px; /* Adjust the size of the buttons */
-    font-size: 16px; /* Adjust the font size */
-    cursor: pointer; /* Change cursor to pointer when hovering over the buttons */
-}
-
-    </style>
-
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      padding: 8px 12px; border: 1px solid #ccc; border-radius: 10px; cursor: pointer;
+      background: #fafafa;
+    }
+    button.primary { background: #eef6ff; border-color: #b5d4ff; }
+    button.danger { background: #fff3f1; border-color: #ffd0c7; }
+    .muted { color: #666; }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .badge { font-size: 12px; padding: 2px 6px; border-radius: 999px; background: #eef2f7; border: 1px solid #d8dee9; }
+    .small { font-size: 12px; }
+    .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 700px) { .grid-two { grid-template-columns: 1fr; } }
+    .success { color: #1b7f2c; }
+    .warn { color: #b26b00; }
+  </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="1024" height="768"></canvas>
-    <div id="gameControls">
-    <button id="moveUp">Up</button>
-    <button id="moveLeft">Left</button>
-    <button id="moveDown">Down</button>
-    <button id="moveRight">Right</button>
-</div>
-    <div id="underConstruction">Page Under Construction</div>
-    <script>
-  const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const box = 20;
-    let snake = [];
-    snake[0] = {
-        x: 9 * box,
-        y: 10 * box
-    };
+  <div class="wrap">
+    <div class="card">
+      <h1>## Snake: Systemd vs. the Classics</h1>
+      <p class="muted small">Up Left Down Right — Arrow keys also work.</p>
+      <p class="muted">Page Under Construction</p>
+      <div class="badges">
+        <span class="badge">Privacy-first</span>
+        <span class="badge">Consent-gated metrics</span>
+        <span class="badge">sendBeacon JSON</span>
+      </div>
+    </div>
 
-    const words = ["ntp", "network", "syslog", "mount", "gettty", "cron", "init"];
-    let food = {
-        x: Math.floor(Math.random() * 17 + 1) * box,
-        y: Math.floor(Math.random() * 15 + 3) * box,
-        word: words[Math.floor(Math.random() * words.length)]
-    };
-    let score = 0;
-    let d;
+    <div class="row">
+      <div class="card">
+        <h2>System &amp; Browser Information</h2>
+        <p class="muted small">(collecting basic, non-sensitive data; extra signals only after you click “Allow”)</p>
+        <div id="kv-table"></div>
+      </div>
 
-    document.addEventListener("keydown", direction);
-    function direction(event) {
-        let key = event.keyCode;
-        if (key == 37 && d != "RIGHT") {
-            d = "LEFT";
-        } else if (key == 38 && d != "DOWN") {
-            d = "UP";
-        } else if (key == 39 && d != "LEFT") {
-            d = "RIGHT";
-        } else if (key == 40 && d != "UP") {
-            d = "DOWN";
+      <div class="card">
+        <h3>Actions</h3>
+        <div class="actions">
+          <button id="refresh">Refresh</button>
+          <button id="geoloc">Request Geolocation</button>
+          <button id="copy-json">Copy Table as JSON</button>
+          <button id="send" class="primary">Send to /collect</button>
+          <button id="decline" class="danger">Decline</button>
+          <button id="allow" class="primary">Allow</button>
+        </div>
+        <p class="small muted">“Send to /collect” uses <code>navigator.sendBeacon</code> with JSON. Customize the URL on your server.</p>
+        <p class="small muted">We’d like to collect extra diagnostic signals (GPU, storage, media device counts, mouse/scroll speed, etc.) to improve security and analytics.</p>
+        <p id="status" class="small"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>What’s collected</h3>
+      <div class="grid-two small">
+        <div>
+          <strong>Basic (loaded immediately)</strong>
+          <ul>
+            <li>User agent, languages, platform</li>
+            <li>Screen size, DPR, color depth</li>
+            <li>Timezone name</li>
+          </ul>
+        </div>
+        <div>
+          <strong>Extra (after “Allow”)</strong>
+          <ul>
+            <li>Public IP (via tiny JSON fetch)</li>
+            <li>Network (effectiveType/downlink/rtt if available)</li>
+            <li>Storage quota/usage</li>
+            <li>Media device counts (no mic/cam access)</li>
+            <li>GPU vendor/renderer (WebGL)</li>
+            <li>Battery (if supported)</li>
+            <li>Mouse &amp; scroll speeds (5s sampling)</li>
+            <li>Lightweight fingerprint hash</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ---------------- helpers ----------------
+      const $ = (sel) => document.querySelector(sel);
+      const safe = (fn, fb=null) => { try { return fn(); } catch { return fb; } };
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+      const hash = async (str) => {
+        const enc = new TextEncoder().encode(str);
+        const buf = await crypto.subtle.digest('SHA-256', enc);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+      };
+
+      const flatten = (obj, prefix = '', out = {}) => {
+        if (obj === null || obj === undefined) { out[prefix || 'value'] = obj; return out; }
+        if (typeof obj !== 'object') { out[prefix || 'value'] = obj; return out; }
+        if (Array.isArray(obj)) {
+          out[prefix || 'value'] = obj;
+          return out;
         }
-    }
-
-    function collision(head, array) {
-        for (let i = 0; i < array.length; i++) {
-            if (head.x == array[i].x && head.y == array[i].y) {
-                return true;
-            }
+        for (const [k, v] of Object.entries(obj)) {
+          const key = prefix ? prefix + '.' + k : k;
+          if (v && typeof v === 'object' && !Array.isArray(v)) {
+            flatten(v, key, out);
+          } else {
+            out[key] = v;
+          }
         }
-        return false;
-    }
+        return out;
+      };
 
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (let i = 0; i < snake.length; i++) {
-            ctx.fillStyle = (i == 0) ? "green" : "white";
-            ctx.fillRect(snake[i].x, snake[i].y, box, box);
-            
-            ctx.strokeStyle = "red";
-            ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+      const renderKVTable = (obj) => {
+        const flat = flatten(obj);
+        const rows = Object.entries(flat).map(([k,v]) => {
+          let val;
+          if (typeof v === 'object') val = '<code>' + JSON.stringify(v) + '</code>';
+          else if (typeof v === 'string') val = v.replace(/</g, '&lt;');
+          else val = String(v);
+          return '<tr><td><strong>' + k + '</strong></td><td>' + val + '</td></tr>';
+        }).join('');
+        return '<table><thead><tr><th>Property</th><th>Value</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      };
+
+      const sendBeaconJSON = async (url, data) => {
+        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        const ok = navigator.sendBeacon(url, blob);
+        if (!ok) {
+          try {
+            await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data), keepalive: true });
+            return true;
+          } catch { return false; }
         }
-        
-        ctx.fillStyle = "black";
-        ctx.font = "20px Arial";
-        ctx.fillText("SYSTEMD", snake[0].x, snake[0].y - 5);
+        return true;
+      };
 
-        ctx.fillStyle = "red";
-        ctx.fillRect(food.x, food.y, box, box);
-        ctx.fillStyle = "black";
-        ctx.fillText(food.word, food.x, food.y + box);
+      // ---------------- base snapshot ----------------
+      const baseSnapshot = () => {
+        const nav = navigator;
+        const screenInfo = safe(() => ({
+          width: screen.width, height: screen.height,
+          availWidth: screen.availWidth, availHeight: screen.availHeight,
+          colorDepth: screen.colorDepth, pixelRatio: window.devicePixelRatio
+        }), {});
+        const tz = safe(() => Intl.DateTimeFormat().resolvedOptions().timeZone, null);
+        return {
+          ts: new Date().toISOString(),
+          browser: {
+            userAgent: nav.userAgent,
+            language: nav.language,
+            languages: nav.languages,
+            platform: nav.platform,
+            vendor: nav.vendor,
+            hardwareConcurrency: nav.hardwareConcurrency ?? null,
+            deviceMemoryGB: nav.deviceMemory ?? null,
+          },
+          screen: screenInfo,
+          timezone: tz
+        };
+      };
 
-        let snakeX = snake[0].x;
-        let snakeY = snake[0].y;
+      // ---------------- consented extras ----------------
+      const collectExtras = async () => {
+        const nav = navigator;
 
-        if (d == "LEFT") snakeX -= box;
-        if (d == "UP") snakeY -= box;
-        if (d == "RIGHT") snakeX += box;
-        if (d == "DOWN") snakeY += box;
+        // 1) Public IP (change to your API/server if needed)
+        let ipPublic = null;
+        try {
+          const r = await fetch('https://api.ipify.org?format=json', {cache: 'no-store'});
+          ipPublic = (await r.json()).ip || null;
+        } catch {}
 
-        if (snakeX == food.x && snakeY == food.y) {
-            score++;
-            food = {
-                x: Math.floor(Math.random() * 17 + 1) * box,
-                y: Math.floor(Math.random() * 15 + 3) * box,
-                word: words[Math.floor(Math.random() * words.length)]
+        // 2) Network info
+        const net = nav.connection || nav.webkitConnection || nav.mozConnection || null;
+        const netInfo = net ? {
+          effectiveType: net.effectiveType || null,
+          downlink: net.downlink ?? null,
+          rtt: net.rtt ?? null,
+          saveData: !!net.saveData
+        } : null;
+
+        // 3) Storage
+        let storageInfo = null;
+        if (nav.storage && nav.storage.estimate) {
+          try {
+            const {usage, quota} = await nav.storage.estimate();
+            storageInfo = {usage, quota};
+          } catch {}
+        }
+
+        // 4) Media devices count
+        let mediaCounts = null;
+        if (nav.mediaDevices && nav.mediaDevices.enumerateDevices) {
+          try {
+            const devices = await nav.mediaDevices.enumerateDevices();
+            mediaCounts = devices.reduce((acc,d) => (acc[d.kind]=(acc[d.kind]||0)+1, acc), {});
+          } catch {}
+        }
+
+        // 5) WebGL GPU
+        let gpu = null;
+        try {
+          const canvas = document.createElement('canvas');
+          const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+          if (gl) {
+            const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+            gpu = {
+              vendor: dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : null,
+              renderer: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || null
             };
-        } else {
-            snake.pop();
+          }
+        } catch {}
+
+        // 6) Battery
+        let battery = null;
+        if (nav.getBattery) {
+          try {
+            const b = await nav.getBattery();
+            battery = {charging: b.charging, level: b.level, chargingTime: b.chargingTime, dischargingTime: b.dischargingTime};
+          } catch {}
         }
 
-        let newHead = {
-            x: snakeX,
-            y: snakeY
+        // 7) Mouse & Scroll speeds (5s)
+        const sampleMs = 5000;
+        let mousePx = 0, mouseMoves = 0;
+        let lastMouse = null;
+        const onMouse = (e) => {
+          if (lastMouse) {
+            const dx = e.clientX - lastMouse.x, dy = e.clientY - lastMouse.y;
+            mousePx += Math.hypot(dx, dy);
+            mouseMoves++;
+          }
+          lastMouse = {x:e.clientX, y:e.clientY};
+        };
+        let scrollPx = 0, scrollEvents = 0, lastScroll = {x: window.scrollX, y: window.scrollY};
+        const onScroll = () => {
+          const dx = window.scrollX - lastScroll.x;
+          const dy = window.scrollY - lastScroll.y;
+          scrollPx += Math.hypot(dx, dy);
+          scrollEvents++;
+          lastScroll = {x: window.scrollX, y: window.scrollY};
+        };
+        window.addEventListener('mousemove', onMouse, {passive: true});
+        window.addEventListener('scroll', onScroll,   {passive: true});
+        await sleep(sampleMs);
+        window.removeEventListener('mousemove', onMouse);
+        window.removeEventListener('scroll', onScroll);
+        const behavior = {
+          mouseSpeedPxPerSec: Math.round(mousePx / (sampleMs/1000)),
+          mouseMoves,
+          scrollSpeedPxPerSec: Math.round(scrollPx / (sampleMs/1000)),
+          scrollEvents
         };
 
-        if (snakeX < box || snakeY < 3 * box || snakeX >= canvas.width - box || snakeY >= canvas.height - box || collision(newHead, snake)) {
-            clearInterval(game);
-        }
-
-        snake.unshift(newHead);
-
-        ctx.fillStyle = "black";
-        ctx.font = "45px Changa one";
-        ctx.fillText(score, 2 * box, 1.6 * box);
-    }
-
-    let game = setInterval(draw, 100);
-
-    document.getElementById('moveUp').addEventListener('click', function() {
-        if (d != "DOWN") {
-            d = "UP";
-        }
-    });
-
-    document.getElementById('moveLeft').addEventListener('click', function() {
-        if (d != "RIGHT") {
-            d = "LEFT";
-        }
-    });
-
-    document.getElementById('moveDown').addEventListener('click', function() {
-        if (d != "UP") {
-            d = "DOWN";
-        }
-    });
-
-    document.getElementById('moveRight').addEventListener('click', function() {
-        if (d != "LEFT") {
-            d = "RIGHT";
-        }
-    });
-    </script>
-
-
-
-    
- <h2>System and Browser Information</h2>
-    <table id="infoTable">
-        <tr>
-            <th>Property</th>
-            <th>Value</th>
-        </tr>
-        <!-- Information rows will be inserted here by JavaScript -->
-    </table>
-
-    <script>
-        // Plugin system for extending functionality
-        const regular_plugins = {
-            JS_FONTS: function() {
-                // Simplified font check for demonstration. For a full implementation, use the previously discussed method.
-                const fonts = ['Arial', 'Verdana', 'Times New Roman', 'Courier New', 'NotARealFont'];
-                const results = fonts.map(font => {
-                    document.fonts.load('10pt "'+font+'"').then(function(fonts){
-                        if (fonts.length >= 1) {
-                            addRow(font, "Installed");
-                        } else {
-                            addRow(font, "Not Installed");
-                        }
-                    });
-                });
-            },
-            TIMEZONE_OFFSET: function() {
-                const offset = new Date().getTimezoneOffset();
-                const hours = Math.floor(offset / 60);
-                const minutes = offset % 60;
-                addRow("Timezone Offset", `${hours} hour(s) and ${minutes} minute(s)`);
-            }
-        };
-
-        function addRow(property, value) {
-            const table = document.getElementById("infoTable");
-            let row = table.insertRow(-1);
-            let cell1 = row.insertCell(0);
-            let cell2 = row.insertCell(1);
-            cell1.innerHTML = property;
-            cell2.innerHTML = value;
-        }
-
-        // Add various information
-        addRow("OS Platform", navigator.platform);
-        addRow("Browser Name", navigator.appName);
-        addRow("Browser Version", navigator.appVersion);
-        addRow("Cookies Enabled", navigator.cookieEnabled ? "Yes" : "No");
-        addRow("JavaScript Enabled", "Yes"); // If this script runs, JS is enabled
-        addRow("Screen Width (px)", screen.width);
-        addRow("Screen Height (px)", screen.height);
-        addRow("Window Inner Width (px)", window.innerWidth);
-        addRow("Window Inner Height (px)", window.innerHeight);
-        addRow("Color Depth", screen.colorDepth);
-        addRow("Pixel Depth", screen.pixelDepth);
-        addRow("Language", navigator.language || navigator.userLanguage);
-
-        // Execute plugins
-        Object.keys(regular_plugins).forEach(function(pluginKey) {
-            regular_plugins[pluginKey]();
+        // 8) Lightweight fingerprint
+        const screenInfo = safe(() => ({
+          width: screen.width, height: screen.height,
+          availWidth: screen.availWidth, availHeight: screen.availHeight,
+          colorDepth: screen.colorDepth, pixelRatio: window.devicePixelRatio
+        }), {});
+        const tz = safe(() => Intl.DateTimeFormat().resolvedOptions().timeZone, null);
+        const fpSource = JSON.stringify({
+          ua: nav.userAgent,
+          uaData: nav.userAgentData && nav.userAgentData.brands ? nav.userAgentData.brands : null,
+          lang: nav.language, langs: nav.languages,
+          platform: nav.platform, vendor: nav.vendor,
+          hw: {cores: nav.hardwareConcurrency ?? null, memGB: nav.deviceMemory ?? null},
+          screen: screenInfo,
+          tz,
+          gpu
         });
-    </script>
+        const fingerprint = await hash(fpSource);
+
+        return { ipPublic, network: netInfo, storage: storageInfo, mediaDevices: mediaCounts, gpu, battery, behavior, fingerprint };
+      };
+
+      // ---------------- state & UI ----------------
+      let data = baseSnapshot();
+      const tableHost = document.getElementById('kv-table');
+      const status = document.getElementById('status');
+      const render = () => { tableHost.innerHTML = renderKVTable(data); };
+
+      render();
+
+      // buttons
+      document.getElementById('refresh')?.addEventListener('click', () => { data = baseSnapshot(); render(); });
+      document.getElementById('copy-json')?.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+        status.textContent = 'Copied current table JSON to clipboard.';
+      });
+      document.getElementById('geoloc')?.addEventListener('click', () => {
+        if (!navigator.geolocation) { status.textContent = 'Geolocation not supported.'; return; }
+        navigator.geolocation.getCurrentPosition((pos) => {
+          data.geolocation = {
+            lat: pos.coords.latitude, lon: pos.coords.longitude,
+            accuracy_m: pos.coords.accuracy, ts: new Date(pos.timestamp).toISOString()
+          };
+          render();
+          status.textContent = 'Geolocation added (one-shot).';
+        }, (err) => {
+          status.textContent = 'Geolocation denied or unavailable: ' + err.message;
+        }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 });
+      });
+      document.getElementById('send')?.addEventListener('click', async () => {
+        const ok = await sendBeaconJSON('/collect', data);
+        status.textContent = ok ? 'Sent current snapshot to /collect.' : 'Send failed (network error).';
+      });
+
+      document.getElementById('decline')?.addEventListener('click', () => {
+        status.textContent = 'Declined extra diagnostics.';
+      });
+
+      document.getElementById('allow')?.addEventListener('click', async () => {
+        status.textContent = 'Sampling behavior for ~5s… move mouse / scroll if you want.';
+        const extras = await collectExtras();
+        data = Object.assign({}, data, extras, { ts: new Date().toISOString() });
+        render();
+        status.innerHTML = '<span class="success">Extra diagnostics collected.</span> <span class="muted">Click “Send to /collect” to transmit.</span>';
+        console.log('Collected diagnostics:', data);
+      });
+    })();
+  </script>
 </body>
 </html>
